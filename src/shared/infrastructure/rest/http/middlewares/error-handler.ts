@@ -8,21 +8,24 @@ import {
 } from '../responses';
 import ApplicationError from '../../../../domain/exception/application-error';
 import ResourceNotFoundError from '../../../../domain/exception/resource-not-found-error';
+import Logger from '../../../../domain/services/logger';
 
-class ErrorHandler {
-  public handle(err: Error, req: Request, res: ErrorResponse, next: NextFunction): ErrorResponse {
+const errorHandler = ({ logger } : { logger: Logger }) => {
+  return (err: Error, req: Request, res: ErrorResponse, next: NextFunction) => {
     if (res.headersSent) {
       next(err);
     }
 
+    logger.error(`Error : ${err.message}`);
+
     if (err instanceof ApplicationError) {
       return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json(UnprocessableEntityResponse(err));
     } else if (err instanceof ResourceNotFoundError) {
-      return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json(ResourceNotFoundResponse(err));
+      return res.status(StatusCodes.NOT_FOUND).json(ResourceNotFoundResponse(err));
     }
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json(InternalServerErrorResponse);
-  }
-}
+  };
+};
 
-export default ErrorHandler;
+export default errorHandler;
